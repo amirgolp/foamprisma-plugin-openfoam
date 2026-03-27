@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "foamprisma-plugin-openfoam"
+version = "0.1.0"
+description = "FoamPrisma OpenFOAM parser, schema, and action plugin for NOMAD"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "FoamPrisma Team" }]
+
+dependencies = [
+    "nomad-lab>=1.3.0",
+    "temporalio>=1.6.0",
+    "pydantic>=2.0",
+    "PyFoam>=2022.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-asyncio>=0.23",
+]
+
+[project.entry-points."nomad.plugin"]
+# Parsers
+openfoam_parser = "foamprisma_openfoam.parser:openfoam_parser_entry_point"
+
+# Schema packages
+openfoam_schema = "foamprisma_openfoam.schema:openfoam_schema_entry_point"
+
+# Actions (Temporal workflows)
+run_solver_action = "foamprisma_openfoam.actions:run_solver_action"
+generate_mesh_action = "foamprisma_openfoam.actions:generate_mesh_action"
+check_mesh_action = "foamprisma_openfoam.actions:check_mesh_action"
+custom_solver_action = "foamprisma_openfoam.actions:custom_solver_action"
+openfoam_app = "foamprisma_openfoam.apps:openfoam_app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

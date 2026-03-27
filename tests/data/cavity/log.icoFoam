@@ -1,0 +1,25 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           |
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+
+Time = 0.005
+
+PISO: Solving for p, Initial residual = 0.999, Final residual = 3.12e-07, No Iterations 2
+PISO: Solving for p, Initial residual = 3.12e-07, Final residual = 1.04e-08, No Iterations 2
+PISO: Solving for Ux, Initial residual = 0.999, Final residual = 5.26e-08, No Iterations 1
+PISO: Solving for Uy, Initial residual = 0.999, Final residual = 5.04e-08, No Iterations 1
+
+Time = 0.01
+
+PISO: Solving for p, Initial residual = 0.481, Final residual = 2.80e-07, No Iterations 2
+PISO: Solving for p, Initial residual = 2.80e-07, Final residual = 9.11e-09, No Iterations 2
+PISO: Solving for Ux, Initial residual = 0.167, Final residual = 5.02e-09, No Iterations 1
+PISO: Solving for Uy, Initial residual = 0.196, Final residual = 6.29e-09, No Iterations 1
+
+ExecutionTime = 0.28 s  ClockTime = 0 s
+
+End

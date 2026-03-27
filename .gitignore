@@ -1,0 +1,19 @@
+# Build
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Virtual environments
+.venv/
+venv/
+
+# OS
+.DS_Store
