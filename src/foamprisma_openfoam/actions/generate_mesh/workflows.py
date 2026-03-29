@@ -44,7 +44,7 @@ class GenerateMeshWorkflow:
 
         # Step 3: Generate mesh
         if mesh_tool == 'blockMesh':
-            mesh_result = await workflow.execute_activity(
+            await workflow.execute_activity(
                 run_block_mesh,
                 args=[work_dir],
                 start_to_close_timeout=timedelta(minutes=30),
@@ -52,7 +52,7 @@ class GenerateMeshWorkflow:
                 retry_policy=retry,
             )
         else:
-            mesh_result = await workflow.execute_activity(
+            await workflow.execute_activity(
                 run_snappy_hex_mesh,
                 args=[work_dir],
                 start_to_close_timeout=timedelta(hours=2),

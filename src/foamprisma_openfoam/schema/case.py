@@ -9,7 +9,7 @@ The GUI renders this schema as an interactive entry page where users can:
 - Monitor workflow status
 """
 
-from nomad.metainfo import MSection, Quantity, SubSection, MEnum, Section, Package
+from nomad.metainfo import Quantity, SubSection, MEnum, Section, Package
 from nomad.datamodel.data import EntryData
 from nomad.datamodel.metainfo.annotations import (
     ELNAnnotation, ELNComponentEnum, SectionProperties,

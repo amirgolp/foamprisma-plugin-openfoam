@@ -12,9 +12,12 @@ from nomad.config.models.ui import (
 )
 
 _SCHEMA = 'foamprisma_openfoam.schema.case.OpenFOAMCase'
-_Q = lambda field: f'data.{field}#{_SCHEMA}'
+def _Q(field):
+    return f'data.{field}#{_SCHEMA}'
 
-_LG_LAYOUT = lambda w, h, x, y: {'lg': Layout(w=w, h=h, x=x, y=y, minH=3, minW=3)}
+
+def _LG_LAYOUT(w, h, x, y):
+    return {'lg': Layout(w=w, h=h, x=x, y=y, minH=3, minW=3)}
 
 
 openfoam_app = AppEntryPoint(

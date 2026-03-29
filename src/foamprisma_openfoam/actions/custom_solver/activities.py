@@ -4,8 +4,6 @@ import subprocess
 from pathlib import Path
 from temporalio import activity
 
-from .models import CustomSolverInput, SolverFormat
-
 
 @activity.defn
 def validate_solver_binary(solver_path: str) -> dict:

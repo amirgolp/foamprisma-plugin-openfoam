@@ -2,7 +2,7 @@
 Mesh quality metrics with auto-generated quality assessment visualizations.
 """
 
-from nomad.metainfo import MSection, Quantity, Section
+from nomad.metainfo import Quantity, Section
 from nomad.datamodel.metainfo.plot import PlotSection, PlotlyFigure
 import plotly.graph_objects as go
 import numpy as np
