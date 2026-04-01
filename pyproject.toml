@@ -39,6 +39,9 @@ check_mesh_action = "foamprisma_openfoam.actions:check_mesh_action"
 custom_solver_action = "foamprisma_openfoam.actions:custom_solver_action"
 openfoam_app = "foamprisma_openfoam.apps:openfoam_app"
 
+# NORTH tool (OpenFOAM v2212 JupyterLab image)
+openfoam_north = "foamprisma_openfoam.north_tools:openfoam_north"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
