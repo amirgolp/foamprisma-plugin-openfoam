@@ -49,12 +49,23 @@ class GenerateMeshActionEntryPoint(_ActionBase):
         from nomad.actions import Action
         from .generate_mesh.workflows import GenerateMeshWorkflow
         from .generate_mesh.activities import (
-            run_block_mesh, run_snappy_hex_mesh, run_check_mesh,
+            detect_mesh_tool, run_block_mesh, run_snappy_hex_mesh, run_check_mesh,
         )
+        # GenerateMeshWorkflow also reuses prepare_case and upload_results_to_nomad
+        # from run_solver — must register them on the worker or temporal
+        # raises NotFoundError when those activities are scheduled.
+        from .run_solver.activities import prepare_case, upload_results_to_nomad
         return Action(
             task_queue=self.task_queue,
             workflow=GenerateMeshWorkflow,
-            activities=[run_block_mesh, run_snappy_hex_mesh, run_check_mesh],
+            activities=[
+                prepare_case,
+                detect_mesh_tool,
+                run_block_mesh,
+                run_snappy_hex_mesh,
+                run_check_mesh,
+                upload_results_to_nomad,
+            ],
         )
 
 
