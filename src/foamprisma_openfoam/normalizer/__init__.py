@@ -15,13 +15,8 @@ from __future__ import annotations
 
 try:
     from nomad.config.models.plugins import NormalizerEntryPoint as _NormalizerEntryPoint
-    from nomad.normalizing.normalizer import Normalizer as _NormalizerBase
 except ImportError:
     from pydantic import BaseModel as _NormalizerEntryPoint  # type: ignore[assignment]
-
-    class _NormalizerBase:  # type: ignore[no-redef]
-        def __init__(self, **kwargs):
-            pass
 
 
 # ── solver_name → case_type lookup table ───────────────────────────────────
@@ -112,60 +107,74 @@ def _compute_reynolds(case) -> float | None:
     return float(u_ref) * float(l_ref) / float(nu)
 
 
-class OpenFOAMNormalizer(_NormalizerBase):
-    """Post-parse normalizer for OpenFOAM cases."""
+def _normalize_case(case, logger) -> None:
+    """Pure-function normalizer body.
 
-    def normalize(self, archive, logger=None) -> None:  # type: ignore[override]
-        # Late import: schema cannot be imported at module load time without
-        # nomad-lab on PYTHONPATH, which fails in dev/test environments.
-        from foamprisma_openfoam.schema.case import OpenFOAMCase
-
-        case = getattr(archive, 'data', None)
-        if not isinstance(case, OpenFOAMCase):
-            return
-
-        # 1. Defensive case_type
-        if not case.case_type:
-            inferred = _infer_case_type(case.solver_name)
-            if inferred:
-                case.case_type = inferred
-                if logger:
-                    logger.info(
-                        'OpenFOAMNormalizer: inferred case_type',
-                        solver_name=case.solver_name,
-                        case_type=inferred,
-                    )
-            elif case.solver_name:
-                case.case_type = 'other'
-                if logger:
-                    logger.warn(
-                        'OpenFOAMNormalizer: solver_name not in lookup table',
-                        solver_name=case.solver_name,
-                    )
-
-        # 2. Required-field validation
-        for warning in _required_field_warnings(case):
+    Defined at module level (no nomad imports) so it's importable from tests
+    and from the lazy class built inside OpenFOAMNormalizerEntryPoint.load().
+    """
+    # 1. Defensive case_type
+    if not case.case_type:
+        inferred = _infer_case_type(case.solver_name)
+        if inferred:
+            case.case_type = inferred
             if logger:
-                logger.warn(f'OpenFOAMNormalizer: {warning}', entry=case.case_name or '?')
-
-        # 3. Best-effort Reynolds
-        if case.reynolds_number in (None, 0):
-            re = _compute_reynolds(case)
-            if re is not None:
-                case.reynolds_number = re
-                if logger:
-                    logger.info('OpenFOAMNormalizer: computed Reynolds number', re=re)
-            elif logger:
                 logger.info(
-                    'OpenFOAMNormalizer: Reynolds not derivable from current archive '
-                    '(kinematic_viscosity / reference_velocity / characteristic_length absent)'
+                    'OpenFOAMNormalizer: inferred case_type',
+                    solver_name=case.solver_name,
+                    case_type=inferred,
                 )
+        elif case.solver_name:
+            case.case_type = 'other'
+            if logger:
+                logger.warn(
+                    'OpenFOAMNormalizer: solver_name not in lookup table',
+                    solver_name=case.solver_name,
+                )
+
+    # 2. Required-field validation
+    for warning in _required_field_warnings(case):
+        if logger:
+            logger.warn(f'OpenFOAMNormalizer: {warning}', entry=case.case_name or '?')
+
+    # 3. Best-effort Reynolds
+    if case.reynolds_number in (None, 0):
+        re = _compute_reynolds(case)
+        if re is not None:
+            case.reynolds_number = re
+            if logger:
+                logger.info('OpenFOAMNormalizer: computed Reynolds number', re=re)
+        elif logger:
+            logger.info(
+                'OpenFOAMNormalizer: Reynolds not derivable from current archive '
+                '(kinematic_viscosity / reference_velocity / characteristic_length absent)'
+            )
 
 
 class OpenFOAMNormalizerEntryPoint(_NormalizerEntryPoint):
-    """Entry point so NOMAD discovers and registers the normalizer."""
+    """Entry point so NOMAD discovers and registers the normalizer.
+
+    The actual Normalizer subclass is built inside load() so that
+    `from nomad.normalizing.normalizer import Normalizer` only fires when
+    the entry point is loaded by NOMAD's plugin system — long after
+    nomad.datamodel finishes initialising. Importing it at module top
+    triggers a circular import: nomad.datamodel.metainfo.__init__ calls
+    config.load_plugins(), which imports us, which imports
+    nomad.normalizing, which imports nomad.datamodel — still partially
+    initialised.
+    """
 
     def load(self):  # type: ignore[override]
+        from nomad.normalizing.normalizer import Normalizer
+
+        class OpenFOAMNormalizer(Normalizer):
+            def normalize(self, archive, logger=None) -> None:
+                from foamprisma_openfoam.schema.case import OpenFOAMCase
+                case = getattr(archive, 'data', None)
+                if not isinstance(case, OpenFOAMCase):
+                    return
+                _normalize_case(case, logger)
+
         return OpenFOAMNormalizer()
 
 
