@@ -13,6 +13,15 @@ with workflow.unsafe.imports_passed_through():
         upload_results_to_nomad,
     )
     from .models import RunSolverInput, UserApprovalInput
+    # Hoisted from inline use inside run() — temporal's workflow sandbox
+    # interceptor chokes on the cryptography Rust bindings that
+    # nomad.actions.manager → client → _codec drags in. The unsafe block
+    # passes the import through Python's normal loader and avoids the
+    # SystemError: Objects/dictobject.c:1882 crash.
+    from nomad.actions.manager import (
+        request_signal_input_activity,
+        RequestSignalInputActivityInput,
+    )
 
 
 @workflow.defn
@@ -85,10 +94,6 @@ class RunSolverWorkflow:
 
         # Step 5: Human-in-the-loop on divergence
         if results['diverged']:
-            from nomad.actions.manager import (
-                request_signal_input_activity,
-                RequestSignalInputActivityInput,
-            )
             await workflow.execute_activity(
                 request_signal_input_activity,
                 RequestSignalInputActivityInput(
