@@ -2,18 +2,50 @@
 dist/
 build/
 *.egg-info/
+*.egg
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+pip-wheel-metadata/
+
+# Test / lint caches
 .pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.cache/
 
 # IDE
 .vscode/
 .idea/
 *.swp
+*~
 
 # Virtual environments
 .venv/
 venv/
+env/
 
 # OS
 .DS_Store
+Thumbs.db
+
+# Secrets / env
+.env
+.env.local
+.env.*.local
+
+# Claude Code — keep shared settings.json committable, ignore local overrides
+.claude/settings.local.json
+.claude/.credentials.json
+.claude/projects/
+
+# OpenFOAM artefacts that may slip into tests/data
+**/processor*/
+**/postProcessing/
+**/log.*
