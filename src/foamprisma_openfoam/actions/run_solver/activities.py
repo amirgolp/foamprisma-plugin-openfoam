@@ -151,13 +151,26 @@ def parse_solver_results(log_path: str) -> dict:
     for field, final in re.findall(pattern, content):
         final_residuals[field] = float(final)
 
-    diverged = 'FOAM FATAL ERROR' in content or 'Floating point exception' in content
     completed = any(line.strip() == 'End' for line in content.split('\n')[-10:])
 
-    if diverged:
-        status = 'diverged'
-    elif completed:
+    # Solver divergence detection. Both heuristics must NOT also match the
+    # benign 'trapFpe: Floating point exception trapping enabled' line that
+    # OpenFOAM logs at startup whenever FOAM_SIGFPE is set.
+    has_fatal = 'FOAM FATAL ERROR' in content
+    has_fpe = any(
+        'floating point exception' in line.lower() and 'trapping enabled' not in line.lower()
+        for line in content.splitlines()
+    )
+    diverged = has_fatal or has_fpe
+
+    # Successful runs take priority over divergence heuristics: if the solver
+    # printed its 'End' marker the run finished, regardless of any earlier
+    # transient warnings.
+    if completed:
         status = 'completed'
+        diverged = False
+    elif diverged:
+        status = 'diverged'
     else:
         status = 'incomplete'
 
