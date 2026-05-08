@@ -46,6 +46,7 @@ class OpenFOAMParser(_BaseParser):
         self,
         mainfile: str,
         archive: EntryArchive,
+        logger=None,
         child_archives=None,
     ) -> None:
         # Resolve case root: mainfile is .../system/controlDict
