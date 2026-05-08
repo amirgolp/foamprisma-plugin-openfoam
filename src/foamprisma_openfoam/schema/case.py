@@ -70,6 +70,14 @@ class OpenFOAMCase(EntryData):
         description='Classification of the simulation type',
         a_eln=ELNAnnotation(component=ELNComponentEnum.EnumEditQuantity),
     )
+    reynolds_number = Quantity(
+        type=float,
+        description=(
+            'Reynolds number derived during normalization from kinematic viscosity '
+            'and a characteristic inlet velocity. Best-effort; missing if not derivable.'
+        ),
+        a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
+    )
 
     # ── Structured Subsections ──
     mesh = SubSection(

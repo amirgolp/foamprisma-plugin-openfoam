@@ -26,16 +26,19 @@ class SolverConfiguration(MSection):
     )
     start_time = Quantity(
         type=np.float64,
+        unit='second',
         description='Simulation start time',
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
     )
     end_time = Quantity(
         type=np.float64,
+        unit='second',
         description='Simulation end time',
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
     )
     delta_t = Quantity(
         type=np.float64,
+        unit='second',
         description='Time step (deltaT)',
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
     )

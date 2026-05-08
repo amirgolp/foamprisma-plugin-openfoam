@@ -50,6 +50,7 @@ class SimulationResults(PlotSection):
     )
     wall_time_seconds = Quantity(
         type=np.float64,
+        unit='second',
         description='Total wall-clock time for the solver run',
     )
     continuity_error_final = Quantity(

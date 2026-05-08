@@ -19,33 +19,37 @@ class MeshQuality(PlotSection):
     # ── Orthogonality ──
     max_non_orthogonality = Quantity(
         type=np.float64,
-        description='Maximum non-orthogonality angle (degrees)',
+        unit='degree',
+        description='Maximum non-orthogonality angle',
     )
     average_non_orthogonality = Quantity(
         type=np.float64,
-        description='Average non-orthogonality angle (degrees)',
+        unit='degree',
+        description='Average non-orthogonality angle',
     )
 
     # ── Skewness ──
     max_skewness = Quantity(
         type=np.float64,
-        description='Maximum cell skewness',
+        description='Maximum cell skewness (dimensionless)',
     )
 
     # ── Aspect ratio ──
     max_aspect_ratio = Quantity(
         type=np.float64,
-        description='Maximum cell aspect ratio',
+        description='Maximum cell aspect ratio (dimensionless)',
     )
 
     # ── Volume ──
     min_volume = Quantity(
         type=np.float64,
-        description='Minimum cell volume (m³)',
+        unit='meter ** 3',
+        description='Minimum cell volume',
     )
     max_volume = Quantity(
         type=np.float64,
-        description='Maximum cell volume (m³)',
+        unit='meter ** 3',
+        description='Maximum cell volume',
     )
 
     # ── Overall ──

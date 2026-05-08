@@ -32,6 +32,9 @@ openfoam_parser = "foamprisma_openfoam.parser:openfoam_parser_entry_point"
 # Schema packages
 openfoam_schema = "foamprisma_openfoam.schema:openfoam_schema_entry_point"
 
+# Normalizers
+openfoam_normalizer = "foamprisma_openfoam.normalizer:openfoam_normalizer_entry_point"
+
 # Actions (Temporal workflows)
 run_solver_action = "foamprisma_openfoam.actions:run_solver_action"
 generate_mesh_action = "foamprisma_openfoam.actions:generate_mesh_action"
