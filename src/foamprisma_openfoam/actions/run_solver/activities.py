@@ -1,24 +1,58 @@
-import subprocess
 import os
+import shutil
+import subprocess
 from pathlib import Path
+
 from temporalio import activity
 
-from .models import RunSolverInput
+
+def _resolve_case_dir(upload_id: str, entry_id: str) -> tuple[Path, str]:
+    """
+    Resolve the on-disk path of an OpenFOAM case directory and the case dir
+    relative to the upload root.
+
+    The plugin's parser matches `system/controlDict`, so an entry's mainfile
+    is `<case_dir>/system/controlDict`. The case dir is therefore the
+    grandparent of the mainfile.
+    """
+    from nomad.files import StagingUploadFiles
+    from nomad.processing import Entry
+
+    entry = Entry.objects(entry_id=entry_id).first()
+    if entry is None:
+        raise ValueError(f'Entry {entry_id} not found')
+    if entry.upload_id != upload_id:
+        raise ValueError(
+            f'Entry {entry_id} belongs to upload {entry.upload_id}, not {upload_id}'
+        )
+
+    mainfile_rel = Path(entry.mainfile)
+    case_dir_rel = mainfile_rel.parent.parent
+    if case_dir_rel == Path('.'):
+        raise ValueError(
+            f'Mainfile {mainfile_rel} is not under a case directory '
+            '(expected <case>/system/controlDict).'
+        )
+
+    upload_files = StagingUploadFiles(upload_id)
+    case_os_path = Path(upload_files.raw_file_object(str(case_dir_rel)).os_path)
+    return case_os_path, str(case_dir_rel)
 
 
 @activity.defn
-def prepare_case(data: RunSolverInput) -> dict:
+def prepare_case(upload_id: str, case_entry_id: str) -> dict:
     """
     Copy case files from NOMAD storage to the OpenFOAM working directory.
-    Validate case structure (system/, constant/, 0/ exist).
+    Validate case structure (system/, constant/ exist; system/controlDict present).
+
+    Takes primitive args (not RunSolverInput) so other workflows
+    (generate_mesh, check_mesh) can reuse this activity without leaking
+    solver-specific fields through Temporal serialization.
     """
-    from nomad.actions.manager import get_entry_raw_path
+    case_path, case_dir_rel = _resolve_case_dir(upload_id, case_entry_id)
 
-    case_path = get_entry_raw_path(data.upload_id, data.case_entry_id)
-    work_dir = Path(f'/data/openfoam-cases/{data.upload_id}/{data.case_entry_id}')
+    work_dir = Path(f'/data/openfoam-cases/{upload_id}/{case_entry_id}')
     work_dir.mkdir(parents=True, exist_ok=True)
-
-    import shutil
     shutil.copytree(case_path, work_dir, dirs_exist_ok=True)
 
     required_dirs = ['system', 'constant']
@@ -29,7 +63,11 @@ def prepare_case(data: RunSolverInput) -> dict:
     if not (work_dir / 'system' / 'controlDict').exists():
         raise ValueError('Missing system/controlDict')
 
-    return {'work_dir': str(work_dir), 'case_valid': True}
+    return {
+        'work_dir': str(work_dir),
+        'case_dir_rel': case_dir_rel,
+        'case_valid': True,
+    }
 
 
 @activity.defn
@@ -39,7 +77,7 @@ def decompose_case(work_dir: str, n_processors: int) -> dict:
         return {'decomposed': False, 'n_processors': 1}
 
     result = subprocess.run(
-        ['decomposePar'],
+        ['decomposePar', '-force'],
         cwd=work_dir,
         capture_output=True,
         text=True,
@@ -102,7 +140,7 @@ def run_openfoam_solver(
 
 
 @activity.defn
-def parse_solver_results(work_dir: str, log_path: str) -> dict:
+def parse_solver_results(log_path: str) -> dict:
     """Parse solver log for final residuals and convergence status."""
     import re
 
@@ -130,12 +168,23 @@ def parse_solver_results(work_dir: str, log_path: str) -> dict:
 def upload_results_to_nomad(
     upload_id: str, user_id: str, work_dir: str, case_entry_id: str
 ) -> dict:
-    """Upload solver results back into NOMAD as a new or updated entry."""
-    from nomad.actions.manager import update_entry_archive
+    """
+    Copy solver outputs from the work directory back into the NOMAD staging
+    upload and trigger reprocessing of the case entry so the parser picks up
+    the new results.
+    """
+    from nomad.processing import Entry
 
-    update_entry_archive(
-        upload_id=upload_id,
-        entry_id=case_entry_id,
-        raw_path=work_dir,
-    )
+    case_path, _ = _resolve_case_dir(upload_id, case_entry_id)
+    src = Path(work_dir)
+    if not src.is_dir():
+        raise ValueError(f'Work dir {work_dir} not found')
+
+    shutil.copytree(src, case_path, dirs_exist_ok=True)
+
+    entry = Entry.objects(entry_id=case_entry_id).first()
+    if entry is None:
+        raise ValueError(f'Entry {case_entry_id} not found after solver run')
+    entry.process_entry()
+
     return {'result_entry_id': case_entry_id, 'uploaded': True}

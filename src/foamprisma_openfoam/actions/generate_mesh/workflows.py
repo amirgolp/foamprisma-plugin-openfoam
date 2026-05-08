@@ -28,7 +28,7 @@ class GenerateMeshWorkflow:
         # Step 1: Prepare working directory
         case_info = await workflow.execute_activity(
             prepare_case,
-            data,
+            args=[data.upload_id, data.case_entry_id],
             start_to_close_timeout=timedelta(minutes=5),
             retry_policy=retry,
         )

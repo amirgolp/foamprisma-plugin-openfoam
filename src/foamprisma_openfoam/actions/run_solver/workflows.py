@@ -44,7 +44,7 @@ class RunSolverWorkflow:
         # Step 1: Prepare
         case_info = await workflow.execute_activity(
             prepare_case,
-            data,
+            args=[data.upload_id, data.case_entry_id],
             start_to_close_timeout=timedelta(minutes=5),
             retry_policy=retry_policy,
         )
@@ -78,7 +78,7 @@ class RunSolverWorkflow:
         # Step 4: Parse results
         results = await workflow.execute_activity(
             parse_solver_results,
-            args=[work_dir, solver_result['log_path']],
+            args=[solver_result['log_path']],
             start_to_close_timeout=timedelta(minutes=5),
             retry_policy=retry_policy,
         )
@@ -86,15 +86,16 @@ class RunSolverWorkflow:
         # Step 5: Human-in-the-loop on divergence
         if results['diverged']:
             from nomad.actions.manager import (
-                request_user_input_activity,
-                RequestUserInputActivityInput,
+                request_signal_input_activity,
+                RequestSignalInputActivityInput,
             )
             await workflow.execute_activity(
-                request_user_input_activity,
-                RequestUserInputActivityInput(
+                request_signal_input_activity,
+                RequestSignalInputActivityInput(
                     action_instance_id=workflow.info().workflow_id,
                     user_id=data.user_id,
                     signal_fn_name='provide_approval',
+                    title='Solver diverged',
                     description=(
                         'Solver diverged. Review residuals and decide whether to '
                         're-run with modified settings or accept current results.'
