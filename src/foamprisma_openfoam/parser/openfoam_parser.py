@@ -176,7 +176,7 @@ def _infer_case_type(adapter: PyFoamAdapter) -> str:
 
 
 def _parse_results(case_dir: Path, solver_name: str) -> SimulationResults | None:
-    """Look for a solver log and extract basic convergence info."""
+    """Look for a solver log and extract convergence info into the schema."""
     import re
 
     solver_name = solver_name or ''
@@ -191,30 +191,60 @@ def _parse_results(case_dir: Path, solver_name: str) -> SimulationResults | None
 
     text = log_path.read_text(errors='replace')
 
+    # Defer the import — the residual subsection class is needed.
+    try:
+        from foamprisma_openfoam.schema.results import ResidualHistory
+    except ImportError:
+        ResidualHistory = None  # type: ignore[assignment]
+
     results = SimulationResults()
-    results.log_path = str(log_path.relative_to(case_dir))
 
-    # Convergence
-    results.converged = 'SIMPLE solution converged' in text or 'solution converged' in text.lower()
+    # Wall time: take the LAST ExecutionTime in the log (icoFoam writes one
+    # per time step). re.search would grab the first 'ExecutionTime = 0 s'
+    # printed before the first iteration completes.
+    exec_times = re.findall(r'ExecutionTime\s*=\s*([\d.eE+-]+)\s*s', text)
+    if exec_times:
+        results.wall_time_seconds = float(exec_times[-1])
 
-    # Wall time
-    m = re.search(r'ExecutionTime\s*=\s*([\d.]+)\s*s', text)
-    if m:
-        results.wall_time_seconds = float(m.group(1))
+    # Per-field residual histories. icoFoam (and friends) print
+    #   Solving for <field>, Initial residual = X, Final residual = Y, No Iterations N
+    # for each field at each time step. Group by field and build a
+    # ResidualHistory subsection per field — that's what the schema's
+    # SimulationResults.normalize() consumes to build the Plotly figure.
+    pattern = re.compile(
+        r'Solving for (\w+),\s*Initial residual\s*=\s*([\d.eE+-]+),\s*'
+        r'Final residual\s*=\s*([\d.eE+-]+)'
+    )
+    histories: dict[str, dict] = {}
+    for field, init, final in pattern.findall(text):
+        h = histories.setdefault(field, {'initial': [], 'final': []})
+        h['initial'].append(float(init))
+        h['final'].append(float(final))
 
-    # Final residuals
-    pattern = r'Solving for (\w+), Initial residual = [\d.e+-]+, Final residual = ([\d.e+-]+)'
-    matches = re.findall(pattern, text)
-    if matches:
-        final = {}
-        for field, res in matches:
-            final[field] = float(res)
-        import json
-        results.final_residuals_json = json.dumps(final)
+    if histories and ResidualHistory is not None:
+        import numpy as np
+        for field, h in histories.items():
+            rh = ResidualHistory()
+            rh.field_name = field
+            rh.initial_residuals = np.array(h['initial'])
+            rh.final_residuals = np.array(h['final'])
+            results.residual_histories.append(rh)
 
-    # Divergence check
-    diverged = 'FOAM FATAL ERROR' in text or 'Floating point exception' in text
-    if diverged:
+        # Total iterations = max length across histories (typically all equal).
+        results.total_iterations = max(len(h['initial']) for h in histories.values())
+
+        # Converged if every field's last final residual is below the tolerance
+        # icoFoam typically targets (1e-5 by default for U/p).
+        last_finals = [h['final'][-1] for h in histories.values() if h['final']]
+        results.converged = bool(last_finals) and all(r < 1e-4 for r in last_finals)
+
+    # Solver crashed? Override converged.
+    has_fatal = 'FOAM FATAL ERROR' in text
+    has_fpe = any(
+        'floating point exception' in line.lower() and 'trapping enabled' not in line.lower()
+        for line in text.splitlines()
+    )
+    if has_fatal or has_fpe:
         results.converged = False
 
     # Iteration count (time steps written to disk)
