@@ -19,37 +19,37 @@ class MeshQuality(PlotSection):
     # ── Orthogonality ──
     max_non_orthogonality = Quantity(
         type=np.float64,
-        unit='degree',
-        description='Maximum non-orthogonality angle',
+        unit="degree",
+        description="Maximum non-orthogonality angle",
     )
     average_non_orthogonality = Quantity(
         type=np.float64,
-        unit='degree',
-        description='Average non-orthogonality angle',
+        unit="degree",
+        description="Average non-orthogonality angle",
     )
 
     # ── Skewness ──
     max_skewness = Quantity(
         type=np.float64,
-        description='Maximum cell skewness (dimensionless)',
+        description="Maximum cell skewness (dimensionless)",
     )
 
     # ── Aspect ratio ──
     max_aspect_ratio = Quantity(
         type=np.float64,
-        description='Maximum cell aspect ratio (dimensionless)',
+        description="Maximum cell aspect ratio (dimensionless)",
     )
 
     # ── Volume ──
     min_volume = Quantity(
         type=np.float64,
-        unit='meter ** 3',
-        description='Minimum cell volume',
+        unit="meter ** 3",
+        description="Minimum cell volume",
     )
     max_volume = Quantity(
         type=np.float64,
-        unit='meter ** 3',
-        description='Maximum cell volume',
+        unit="meter ** 3",
+        description="Maximum cell volume",
     )
 
     # ── Overall ──
@@ -59,7 +59,7 @@ class MeshQuality(PlotSection):
     )
     n_illegal_cells = Quantity(
         type=int,
-        description='Number of cells with negative volume or other failures',
+        description="Number of cells with negative volume or other failures",
         default=0,
     )
 
@@ -70,16 +70,16 @@ class MeshQuality(PlotSection):
         thresholds = {}
 
         if self.max_non_orthogonality is not None:
-            metrics['Non-Orthogonality (max)'] = self.max_non_orthogonality
-            thresholds['Non-Orthogonality (max)'] = 70.0  # degrees
+            metrics["Non-Orthogonality (max)"] = self.max_non_orthogonality
+            thresholds["Non-Orthogonality (max)"] = 70.0  # degrees
 
         if self.max_skewness is not None:
-            metrics['Skewness (max)'] = self.max_skewness
-            thresholds['Skewness (max)'] = 4.0
+            metrics["Skewness (max)"] = self.max_skewness
+            thresholds["Skewness (max)"] = 4.0
 
         if self.max_aspect_ratio is not None:
-            metrics['Aspect Ratio (max)'] = self.max_aspect_ratio
-            thresholds['Aspect Ratio (max)'] = 100.0
+            metrics["Aspect Ratio (max)"] = self.max_aspect_ratio
+            thresholds["Aspect Ratio (max)"] = 100.0
 
         if not metrics:
             return
@@ -91,37 +91,46 @@ class MeshQuality(PlotSection):
 
         # Normalize to 0-100 scale (100 = at threshold, beyond = bad)
         normalized = [min((v / t) * 100, 150) for v, t in zip(values, threshold_vals)]
-        colors = ['#00B894' if n <= 80 else '#FF6B35' if n <= 100 else '#DC2626'
-                  for n in normalized]
+        colors = [
+            "#00B894" if n <= 80 else "#FF6B35" if n <= 100 else "#DC2626"
+            for n in normalized
+        ]
 
         fig = go.Figure()
-        fig.add_trace(go.Bar(
-            x=names,
-            y=normalized,
-            marker_color=colors,
-            text=[f'{v:.1f}' for v in values],
-            textposition='outside',
-            hovertemplate='%{x}<br>Value: %{text}<br>Threshold: %{customdata:.1f}<extra></extra>',
-            customdata=threshold_vals,
-        ))
+        fig.add_trace(
+            go.Bar(
+                x=names,
+                y=normalized,
+                marker_color=colors,
+                text=[f"{v:.1f}" for v in values],
+                textposition="outside",
+                hovertemplate="%{x}<br>Value: %{text}<br>Threshold: %{customdata:.1f}<extra></extra>",
+                customdata=threshold_vals,
+            )
+        )
 
         # Add threshold line
-        fig.add_hline(y=100, line_dash='dash', line_color='red',
-                      annotation_text='Threshold', annotation_position='top left')
+        fig.add_hline(
+            y=100,
+            line_dash="dash",
+            line_color="red",
+            annotation_text="Threshold",
+            annotation_position="top left",
+        )
 
         fig.update_layout(
-            title='Mesh Quality Assessment',
-            yaxis_title='% of Threshold (lower is better)',
-            template='plotly_white',
+            title="Mesh Quality Assessment",
+            yaxis_title="% of Threshold (lower is better)",
+            template="plotly_white",
             height=400,
             showlegend=False,
         )
 
-        status = '✓ Mesh OK' if self.mesh_ok else '✗ Mesh has issues'
+        status = "✓ Mesh OK" if self.mesh_ok else "✗ Mesh has issues"
 
         self.figures = [
             PlotlyFigure(
-                label=f'Mesh Quality ({status})',
+                label=f"Mesh Quality ({status})",
                 figure=fig.to_plotly_json(),
             ),
         ]

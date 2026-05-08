@@ -15,107 +15,107 @@ class SolverConfiguration(MSection):
     """
 
     m_def = Section(
-        a_eln=ELNAnnotation(lane_width='800px'),
+        a_eln=ELNAnnotation(lane_width="800px"),
     )
 
     # ── controlDict ──
     application = Quantity(
         type=str,
-        description='Solver application name from controlDict',
+        description="Solver application name from controlDict",
         a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity),
     )
     start_time = Quantity(
         type=np.float64,
-        unit='second',
-        description='Simulation start time',
+        unit="second",
+        description="Simulation start time",
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
     )
     end_time = Quantity(
         type=np.float64,
-        unit='second',
-        description='Simulation end time',
+        unit="second",
+        description="Simulation end time",
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
     )
     delta_t = Quantity(
         type=np.float64,
-        unit='second',
-        description='Time step (deltaT)',
+        unit="second",
+        description="Time step (deltaT)",
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
     )
     write_interval = Quantity(
         type=np.float64,
-        description='Write interval for output',
+        description="Write interval for output",
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
     )
     write_format = Quantity(
         type=str,
-        description='Write format (ascii/binary)',
+        description="Write format (ascii/binary)",
     )
     write_compression = Quantity(
         type=str,
-        description='Write compression (compressed/uncompressed)',
+        description="Write compression (compressed/uncompressed)",
     )
 
     # ── fvSchemes ──
     time_scheme = Quantity(
         type=str,
-        description='ddtSchemes default (e.g., Euler, backward, CrankNicolson)',
+        description="ddtSchemes default (e.g., Euler, backward, CrankNicolson)",
         a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity),
     )
     grad_schemes = Quantity(
         type=JSON,
-        description='Gradient discretization schemes from fvSchemes',
+        description="Gradient discretization schemes from fvSchemes",
     )
     div_schemes = Quantity(
         type=JSON,
-        description='Divergence discretization schemes from fvSchemes',
+        description="Divergence discretization schemes from fvSchemes",
     )
     laplacian_schemes = Quantity(
         type=JSON,
-        description='Laplacian discretization schemes from fvSchemes',
+        description="Laplacian discretization schemes from fvSchemes",
     )
     interpolation_schemes = Quantity(
         type=JSON,
-        description='Interpolation schemes from fvSchemes',
+        description="Interpolation schemes from fvSchemes",
     )
 
     # ── fvSolution ──
     solvers = Quantity(
         type=JSON,
-        description='Linear solver settings per field from fvSolution',
+        description="Linear solver settings per field from fvSolution",
     )
     relaxation_factors = Quantity(
         type=JSON,
-        description='Under-relaxation factors from fvSolution',
+        description="Under-relaxation factors from fvSolution",
     )
     n_correctors = Quantity(
         type=int,
-        description='Number of PISO/PIMPLE correctors',
+        description="Number of PISO/PIMPLE correctors",
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
     )
     n_non_orthogonal_correctors = Quantity(
         type=int,
-        description='Number of non-orthogonal correctors',
+        description="Number of non-orthogonal correctors",
         a_eln=ELNAnnotation(component=ELNComponentEnum.NumberEditQuantity),
     )
 
     # ── Turbulence ──
     turbulence_model = Quantity(
         type=str,
-        description='Turbulence model (e.g., kOmegaSST, kEpsilon, laminar)',
+        description="Turbulence model (e.g., kOmegaSST, kEpsilon, laminar)",
         a_eln=ELNAnnotation(component=ELNComponentEnum.StringEditQuantity),
     )
     turbulence_type = Quantity(
         type=str,
-        description='RAS, LES, or laminar',
+        description="RAS, LES, or laminar",
     )
 
     # ── Parallel ──
     n_subdomains = Quantity(
         type=int,
-        description='Number of subdomains from decomposeParDict',
+        description="Number of subdomains from decomposeParDict",
     )
     decomposition_method = Quantity(
         type=str,
-        description='Decomposition method (scotch, hierarchical, simple)',
+        description="Decomposition method (scotch, hierarchical, simple)",
     )

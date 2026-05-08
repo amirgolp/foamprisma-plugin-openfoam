@@ -13,6 +13,7 @@ with workflow.unsafe.imports_passed_through():
         upload_results_to_nomad,
     )
     from .models import RunSolverInput, UserApprovalInput
+
     # Hoisted from inline use inside run() — temporal's workflow sandbox
     # interceptor chokes on the cryptography Rust bindings that
     # nomad.actions.manager → client → _codec drags in. The unsafe block
@@ -57,7 +58,7 @@ class RunSolverWorkflow:
             start_to_close_timeout=timedelta(minutes=5),
             retry_policy=retry_policy,
         )
-        work_dir = case_info['work_dir']
+        work_dir = case_info["work_dir"]
 
         # Step 2: Decompose
         if data.n_processors > 1:
@@ -75,7 +76,7 @@ class RunSolverWorkflow:
                 work_dir,
                 data.solver_name,
                 data.solver_type.value,
-                data.custom_solver_path or '',
+                data.custom_solver_path or "",
                 data.n_processors,
                 data.openfoam_version,
             ],
@@ -87,23 +88,23 @@ class RunSolverWorkflow:
         # Step 4: Parse results
         results = await workflow.execute_activity(
             parse_solver_results,
-            args=[solver_result['log_path']],
+            args=[solver_result["log_path"]],
             start_to_close_timeout=timedelta(minutes=5),
             retry_policy=retry_policy,
         )
 
         # Step 5: Human-in-the-loop on divergence
-        if results['diverged']:
+        if results["diverged"]:
             await workflow.execute_activity(
                 request_signal_input_activity,
                 RequestSignalInputActivityInput(
                     action_instance_id=workflow.info().workflow_id,
                     user_id=data.user_id,
-                    signal_fn_name='provide_approval',
-                    title='Solver diverged',
+                    signal_fn_name="provide_approval",
+                    title="Solver diverged",
                     description=(
-                        'Solver diverged. Review residuals and decide whether to '
-                        're-run with modified settings or accept current results.'
+                        "Solver diverged. Review residuals and decide whether to "
+                        "re-run with modified settings or accept current results."
                     ),
                 ),
                 start_to_close_timeout=timedelta(minutes=5),
@@ -116,10 +117,10 @@ class RunSolverWorkflow:
 
             if self._user_approval and not self._user_approval.approved:
                 return {
-                    'status': 'cancelled_by_user',
-                    'message': self._user_approval.message,
-                    'wall_time_seconds': solver_result['wall_time_seconds'],
-                    'final_residuals': results['final_residuals'],
+                    "status": "cancelled_by_user",
+                    "message": self._user_approval.message,
+                    "wall_time_seconds": solver_result["wall_time_seconds"],
+                    "final_residuals": results["final_residuals"],
                 }
 
         # Step 6: Upload results
@@ -131,9 +132,9 @@ class RunSolverWorkflow:
         )
 
         return {
-            'status': results['status'],
-            'wall_time_seconds': solver_result['wall_time_seconds'],
-            'final_residuals': results['final_residuals'],
-            'log_path': solver_result['log_path'],
-            'result_entry_id': upload_result['result_entry_id'],
+            "status": results["status"],
+            "wall_time_seconds": solver_result["wall_time_seconds"],
+            "final_residuals": results["final_residuals"],
+            "log_path": solver_result["log_path"],
+            "result_entry_id": upload_result["result_entry_id"],
         }

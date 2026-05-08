@@ -7,7 +7,9 @@ with workflow.unsafe.imports_passed_through():
     from .activities import validate_solver_binary, compile_solver, run_custom_solver
     from .models import CustomSolverInput, SolverFormat
     from foamprisma_openfoam.actions.run_solver.activities import (
-        prepare_case, parse_solver_results, upload_results_to_nomad,
+        prepare_case,
+        parse_solver_results,
+        upload_results_to_nomad,
     )
     from foamprisma_openfoam.actions.run_solver.models import RunSolverInput, SolverType
 
@@ -36,7 +38,7 @@ class CustomSolverWorkflow:
             upload_id=data.upload_id,
             user_id=data.user_id,
             case_entry_id=data.case_entry_id,
-            solver_name='customSolver',
+            solver_name="customSolver",
             solver_type=SolverType.CUSTOM,
         )
         case_info = await workflow.execute_activity(
@@ -45,11 +47,11 @@ class CustomSolverWorkflow:
             start_to_close_timeout=timedelta(minutes=5),
             retry_policy=retry_policy,
         )
-        work_dir = case_info['work_dir']
+        work_dir = case_info["work_dir"]
 
         # Step 2: Fetch solver path from NOMAD
         solver_dir = str(
-            Path(f'/data/openfoam-cases/{data.upload_id}/solver_{data.solver_entry_id}')
+            Path(f"/data/openfoam-cases/{data.upload_id}/solver_{data.solver_entry_id}")
         )
 
         # Step 3a: Validate
@@ -60,8 +62,8 @@ class CustomSolverWorkflow:
             retry_policy=retry_policy,
         )
 
-        if not validation['valid']:
-            return {'status': 'error', 'reason': 'Solver validation failed'}
+        if not validation["valid"]:
+            return {"status": "error", "reason": "Solver validation failed"}
 
         # Step 3b: Compile if source format
         solver_binary = solver_dir
@@ -72,7 +74,7 @@ class CustomSolverWorkflow:
                 start_to_close_timeout=timedelta(minutes=15),
                 retry_policy=RetryPolicy(maximum_attempts=1),
             )
-            solver_binary = compile_result.get('solver_binary', solver_dir)
+            solver_binary = compile_result.get("solver_binary", solver_dir)
 
         # Step 4: Run solver
         run_result = await workflow.execute_activity(
@@ -86,7 +88,7 @@ class CustomSolverWorkflow:
         # Step 5: Parse results
         results = await workflow.execute_activity(
             parse_solver_results,
-            args=[work_dir, run_result['log_path']],
+            args=[work_dir, run_result["log_path"]],
             start_to_close_timeout=timedelta(minutes=5),
             retry_policy=retry_policy,
         )
@@ -100,9 +102,9 @@ class CustomSolverWorkflow:
         )
 
         return {
-            'status': results['status'],
-            'wall_time_seconds': run_result['wall_time_seconds'],
-            'final_residuals': results['final_residuals'],
-            'log_path': run_result['log_path'],
-            'result_entry_id': upload_result['result_entry_id'],
+            "status": results["status"],
+            "wall_time_seconds": run_result["wall_time_seconds"],
+            "final_residuals": results["final_residuals"],
+            "log_path": run_result["log_path"],
+            "result_entry_id": upload_result["result_entry_id"],
         }

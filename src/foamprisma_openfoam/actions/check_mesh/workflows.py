@@ -5,7 +5,8 @@ from temporalio.common import RetryPolicy
 with workflow.unsafe.imports_passed_through():
     from foamprisma_openfoam.actions.generate_mesh.activities import run_check_mesh
     from foamprisma_openfoam.actions.run_solver.activities import (
-        prepare_case, upload_results_to_nomad,
+        prepare_case,
+        upload_results_to_nomad,
     )
     from .models import CheckMeshInput
 
@@ -27,15 +28,19 @@ class CheckMeshWorkflow:
 
         result = await workflow.execute_activity(
             run_check_mesh,
-            args=[case_info['work_dir']],
+            args=[case_info["work_dir"]],
             start_to_close_timeout=timedelta(minutes=10),
             retry_policy=retry,
         )
 
         await workflow.execute_activity(
             upload_results_to_nomad,
-            args=[data.upload_id, data.user_id,
-                  case_info['work_dir'], data.case_entry_id],
+            args=[
+                data.upload_id,
+                data.user_id,
+                case_info["work_dir"],
+                data.case_entry_id,
+            ],
             start_to_close_timeout=timedelta(minutes=10),
             retry_policy=retry,
         )

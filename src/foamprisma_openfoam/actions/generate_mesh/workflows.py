@@ -9,11 +9,15 @@ from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
     from .activities import (
-        detect_mesh_tool, run_block_mesh, run_snappy_hex_mesh, run_check_mesh,
+        detect_mesh_tool,
+        run_block_mesh,
+        run_snappy_hex_mesh,
+        run_check_mesh,
     )
     from .models import GenerateMeshInput
     from foamprisma_openfoam.actions.run_solver.activities import (
-        prepare_case, upload_results_to_nomad,
+        prepare_case,
+        upload_results_to_nomad,
     )
 
 
@@ -32,7 +36,7 @@ class GenerateMeshWorkflow:
             start_to_close_timeout=timedelta(minutes=5),
             retry_policy=retry,
         )
-        work_dir = case_info['work_dir']
+        work_dir = case_info["work_dir"]
 
         # Step 2: Detect mesh tool
         mesh_tool = await workflow.execute_activity(
@@ -43,7 +47,7 @@ class GenerateMeshWorkflow:
         )
 
         # Step 3: Generate mesh
-        if mesh_tool == 'blockMesh':
+        if mesh_tool == "blockMesh":
             await workflow.execute_activity(
                 run_block_mesh,
                 args=[work_dir],
@@ -77,9 +81,9 @@ class GenerateMeshWorkflow:
         )
 
         return {
-            'mesh_tool': mesh_tool,
-            'n_cells': check_result.get('n_cells'),
-            'mesh_ok': check_result.get('mesh_ok', False),
-            'max_non_orthogonality': check_result.get('max_non_orthogonality'),
-            'max_skewness': check_result.get('max_skewness'),
+            "mesh_tool": mesh_tool,
+            "n_cells": check_result.get("n_cells"),
+            "mesh_ok": check_result.get("mesh_ok", False),
+            "max_non_orthogonality": check_result.get("max_non_orthogonality"),
+            "max_skewness": check_result.get("max_skewness"),
         }
