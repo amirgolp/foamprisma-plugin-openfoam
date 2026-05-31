@@ -26,6 +26,16 @@ CASE_DIR = Path(__file__).parent / 'data' / 'cavity'
 CONTROL_DICT = CASE_DIR / 'system' / 'controlDict'
 
 
+def _mag(value):
+    """Strip the pint unit off a NOMAD Quantity so it compares as a float.
+
+    Schema quantities declared with a ``unit`` read back as pint Quantities
+    (e.g. ``0.28 second``), which never equal a bare float under
+    ``pytest.approx``. Plain floats pass through unchanged.
+    """
+    return getattr(value, 'magnitude', value)
+
+
 class TestHelpers:
     def test_detect_mesh_type_blockMesh(self):
         assert _detect_mesh_type(CASE_DIR) == 'blockMesh'
@@ -62,7 +72,7 @@ class TestParseResults:
     def test_parses_execution_time(self):
         results = _parse_results(CASE_DIR, 'icoFoam')
         assert results is not None
-        assert results.wall_time_seconds == pytest.approx(0.28)
+        assert _mag(results.wall_time_seconds) == pytest.approx(0.28)
 
     def test_detects_end_in_log(self):
         results = _parse_results(CASE_DIR, 'icoFoam')
@@ -106,8 +116,8 @@ class TestOpenFOAMParser:
 
         cfg = archive.data.solver_config
         assert cfg is not None
-        assert cfg.end_time == pytest.approx(0.5)
-        assert cfg.delta_t == pytest.approx(0.005)
+        assert _mag(cfg.end_time) == pytest.approx(0.5)
+        assert _mag(cfg.delta_t) == pytest.approx(0.005)
         assert cfg.application == 'icoFoam'
         assert cfg.n_correctors == 2
 
@@ -121,4 +131,4 @@ class TestOpenFOAMParser:
         archive = MagicMock()
         OpenFOAMParser().parse(str(CONTROL_DICT), archive)
         assert archive.data.results is not None
-        assert archive.data.results.wall_time_seconds == pytest.approx(0.28)
+        assert _mag(archive.data.results.wall_time_seconds) == pytest.approx(0.28)
