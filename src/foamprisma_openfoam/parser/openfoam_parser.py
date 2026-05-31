@@ -51,6 +51,11 @@ class OpenFOAMParser(_BaseParser):
         logger=None,
         child_archives=None,
     ) -> None:
+        # NOMAD always supplies a logger, but the parameter defaults to None
+        # (and tests call parse() without one), so fall back to the module logger.
+        if logger is None:
+            logger = logging.getLogger(__name__)
+
         # Resolve case root: mainfile is .../system/controlDict
         control_dict_path = Path(mainfile)
         case_dir = control_dict_path.parent.parent
