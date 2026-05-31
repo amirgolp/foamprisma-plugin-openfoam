@@ -71,11 +71,14 @@ class TestParseResults:
     def test_parses_final_residuals(self):
         results = _parse_results(CASE_DIR, 'icoFoam')
         assert results is not None
-        assert results.final_residuals_json is not None
-        import json
-        residuals = json.loads(results.final_residuals_json)
-        assert 'p' in residuals
-        assert 'Ux' in residuals or 'Uy' in residuals
+        assert results.residual_histories
+        fields = {rh.field_name for rh in results.residual_histories}
+        assert 'p' in fields
+        assert 'Ux' in fields or 'Uy' in fields
+        # Each history should carry a non-empty per-iteration residual series.
+        for rh in results.residual_histories:
+            assert len(rh.initial_residuals) > 0
+            assert len(rh.final_residuals) > 0
 
     def test_returns_none_when_no_log(self, tmp_path):
         (tmp_path / 'system').mkdir()
